@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SecLab Console · 本地靶场攻防控制台</title>
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-glow" aria-hidden="true"></div>
+<div class="scanline" aria-hidden="true"></div>
+
+<svg class="svg-defs" aria-hidden="true">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M8 6 3 12l5 6"/><path d="m16 6 5 6-5 6"/><path d="M13 4 11 20"/></symbol>
+  <symbol id="i-term" viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="16" rx="2"/><path d="m6 9 3 3-3 3"/><path d="M12 15h6"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="8" r="4"/><path d="m11 11 9 9"/><path d="m16 16 2-2"/><path d="m19 19 2-2"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.7 7.5 9 4.3-1.3 7.5-4.5 7.5-9V6Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6Z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m6 7 1 13h10l1-13"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5Z"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5h.01"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+</svg>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 40 40"><path d="M20 3 34 11v18L20 37 6 29V11Z" fill="none" stroke="url(#brandGrad)" stroke-width="1.6"/><path d="M13 20h14M20 13v14" stroke="#22e0ff" stroke-width="1.4" opacity=".65"/><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22e0ff"/><stop offset="1" stop-color="#ff2f87"/></linearGradient></defs></svg>
+      </div>
+      <div class="brand-text">
+        <strong>SECLAB</strong>
+        <span>ATTACK CONSOLE</span>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-label">WORKSPACE</div>
+      <button class="nav-item active" data-page="dashboard"><svg class="ico"><use href="#i-grid"/></svg><span>总览面板</span><i class="nav-dot"></i></button>
+      <button class="nav-item" data-page="sqli"><svg class="ico"><use href="#i-db"/></svg><span>SQL 注入</span><i class="nav-dot"></i></button>
+      <button class="nav-item" data-page="xss"><svg class="ico"><use href="#i-code"/></svg><span>XSS 攻击</span><i class="nav-dot"></i></button>
+      <button class="nav-item" data-page="cmdi"><svg class="ico"><use href="#i-term"/></svg><span>命令注入</span><i class="nav-dot"></i></button>
+      <button class="nav-item" data-page="brute"><svg class="ico"><use href="#i-key"/></svg><span>弱口令爆破</span><i class="nav-dot"></i></button>
+      <div class="nav-label">OPERATIONS</div>
+      <button class="nav-item" data-page="batch"><svg class="ico"><use href="#i-target"/></svg><span>批量扫描</span><i class="nav-dot"></i></button>
+      <button class="nav-item" data-page="tasks"><svg class="ico"><use href="#i-bolt"/></svg><span>任务中心</span><i class="nav-dot"></i></button>
+      <button class="nav-item" data-page="history"><svg class="ico"><use href="#i-clock"/></svg><span>任务记录</span><i class="nav-dot"></i></button>
+      <button class="nav-item" data-page="about"><svg class="ico"><use href="#i-shield"/></svg><span>边界与说明</span><i class="nav-dot"></i></button>
+    </nav>
+
+    <div class="side-foot">
+      <div class="guard-box">
+        <div class="guard-line"><span class="dot live"></span><span>SAFE GUARD</span></div>
+        <p>仅监听 127.0.0.1<br>默认拦截公网目标</p>
+      </div>
+      <div class="ver">v12.0 / DVWA READY</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="crumb"><span id="crumbRoot">WORKSPACE</span><i>/</i><strong id="crumbPage">总览面板</strong></div>
+      <div class="top-right">
+        <div class="pill mini-pill"><svg class="ico"><use href="#i-shield"/></svg><span>本地授权靶场</span></div>
+        <label class="lvl-box"><span>SEC</span>
+          <select id="secLevel">
+            <option value="low">LOW</option>
+            <option value="medium">MEDIUM</option>
+            <option value="high">HIGH</option>
+          </select>
+        </label>
+        <button class="ghost-pill" id="openSettings"><span class="dot"></span><span id="proxyState">直连</span></button>
+        <div class="clock" id="clock">--:--:--</div>
+        <div class="status-light" id="engineLight"><span class="dot live"></span><span id="engineText">ENGINE IDLE</span></div>
+      </div>
+      <div class="global-progress"><i id="globalBar"></i></div>
+    </header>
+
+    <div class="content" id="content">
+
+      <div class="auth-banner" id="authBanner" hidden>
+        <svg class="ico"><use href="#i-shield"/></svg>
+        <div class="auth-text">
+          <strong>Cookie 可能已失效</strong>
+          <span id="authMsg">靶场把请求跳到了 login.php，四个模块都会读不到数据。</span>
+        </div>
+        <button class="btn btn-sm btn-primary" id="authRelogin"><svg class="ico"><use href="#i-key"/></svg>重新登录</button>
+        <button class="cbtn" id="authDismiss">忽略</button>
+      </div>
+
+      <!-- ================= DASHBOARD ================= -->
+      <section class="page active" id="page-dashboard">
+        <div class="hero">
+          <div class="hero-copy">
+            <div class="eyebrow">LOCAL LAB / OFFENSIVE SECURITY CONSOLE</div>
+            <h1>把零散脚本<br><em>编成一支作战小队</em></h1>
+            <p>SQL 注入、XSS、命令注入、弱口令四个模块，共用一套目标配置、实时任务队列与证据链。所有载荷只做漏洞验证，不做破坏。</p>
+            <div class="hero-actions">
+              <button class="btn btn-primary" id="heroFullscan"><svg class="ico"><use href="#i-bolt"/></svg>一键全流程</button>
+              <button class="btn" data-goto="sqli"><svg class="ico"><use href="#i-db"/></svg>进入 SQL 工作台</button>
+            </div>
+          </div>
+          <div class="hero-visual">
+            <div class="radar">
+              <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+              <div class="sweep"></div>
+              <div class="blip b1"></div><div class="blip b2"></div><div class="blip b3"></div>
+              <div class="radar-core"><svg class="ico"><use href="#i-target"/></svg></div>
+            </div>
+            <div class="radar-meta"><span>127.0.0.1</span><span class="ok">SCOPE LOCKED</span></div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-top"><span>累计任务</span><svg class="ico"><use href="#i-bolt"/></svg></div>
+            <div class="num" id="statTasks">0</div>
+            <div class="stat-sub">tasks recorded</div>
+          </div>
+          <div class="stat">
+            <div class="stat-top"><span>高危发现</span><svg class="ico"><use href="#i-shield"/></svg></div>
+            <div class="num danger" id="statHigh">0</div>
+            <div class="stat-sub">critical / high</div>
+          </div>
+          <div class="stat">
+            <div class="stat-top"><span>导出数据行</span><svg class="ico"><use href="#i-db"/></svg></div>
+            <div class="num" id="statRows">0</div>
+            <div class="stat-sub">rows dumped</div>
+          </div>
+          <div class="stat">
+            <div class="stat-top"><span>靶场状态</span><svg class="ico"><use href="#i-target"/></svg></div>
+            <div class="num small" id="statTarget">待检测</div>
+            <div class="stat-sub">local endpoint</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><span class="idx">01</span><h3>模块矩阵</h3><span class="tag">4 MODULES</span></div>
+            <div class="mod-grid">
+              <button class="mod-card" data-goto="sqli">
+                <div class="mod-ico db"><svg class="ico"><use href="#i-db"/></svg></div>
+                <div><strong>SQL 注入</strong><p>布尔 / 报错 / 时间检测，UNION 回显、库表字段枚举与数据导出。</p></div>
+                <span class="mod-arrow">→</span>
+              </button>
+              <button class="mod-card" data-goto="xss">
+                <div class="mod-ico xss"><svg class="ico"><use href="#i-code"/></svg></div>
+                <div><strong>XSS 攻击</strong><p>过滤强度判定、反射上下文分析、绕过变体与 POC 生成。</p></div>
+                <span class="mod-arrow">→</span>
+              </button>
+              <button class="mod-card" data-goto="cmdi">
+                <div class="mod-ico cmd"><svg class="ico"><use href="#i-term"/></svg></div>
+                <div><strong>命令注入</strong><p>连接符扫描、标记回显确认、只读命令白名单执行台。</p></div>
+                <span class="mod-arrow">→</span>
+              </button>
+              <button class="mod-card" data-goto="brute">
+                <div class="mod-ico brute"><svg class="ico"><use href="#i-key"/></svg></div>
+                <div><strong>弱口令爆破</strong><p>字典驱动、智能 / 标准双策略，实时速率与命中凭证。</p></div>
+                <span class="mod-arrow">→</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><span class="idx">02</span><h3>靶场连通性</h3><span class="tag">QUICK CHECK</span></div>
+            <div class="field">
+              <span>目标 URL</span>
+              <input id="dashUrl" value="http://127.0.0.1/vulnerabilities/sqli/?id=1&Submit=Submit" placeholder="http://127.0.0.1/vulnerabilities/sqli/?id=1">
+            </div>
+            <div class="row gap mt">
+              <button class="btn btn-primary btn-sm" id="dashCheck"><svg class="ico"><use href="#i-search"/></svg>检测连通</button>
+              <button class="btn btn-sm" id="dashRegress"><svg class="ico"><use href="#i-shield"/></svg>全模块回归</button>
+              <button class="btn btn-sm" id="dashDefaults">填入 DVWA 默认地址</button>
+            </div>
+            <div id="dashResult" class="inline-out"></div>
+            <div class="hint">「全模块回归」会用四个模块当前的目标与 Cookie 各跑一次轻量探测（含代理连通性），适合切换难度或开代理后做整体复测。</div>
+            <div id="dashRegressOut" class="table-wrap"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">03</span><h3>一键全流程</h3><span class="tag">FULL SCAN</span></div>
+          <p class="hint" style="margin:0">按四个模块当前的配置依次跑完整检测：SQLi 探注入点 → 列数 → 回显列 → 指纹 → 库列表；XSS 判定等级并挑出可用载荷；命令注入确认连接符与 whoami。可选跑一小份弱口令字典。</p>
+          <div class="row gap wrap mt">
+            <label class="mini">参数（SQL / XSS / 命令注入）<input id="fullParams" value="id,name,ip" spellcheck="false" style="width:140px"></label>
+            <label class="switch"><input type="checkbox" id="fullBrute"><span class="track"></span><span class="switch-txt">包含弱口令（25 次，可能触发锁定）</span></label>
+            <button class="btn btn-sm btn-primary" id="fullRun"><svg class="ico"><use href="#i-play"/></svg>开始全流程</button>
+            <button class="btn btn-sm" id="fullExport" disabled><svg class="ico"><use href="#i-download"/></svg>导出报告</button>
+          </div>
+          <div id="fullOut" class="table-wrap"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">04</span><h3>难度矩阵</h3><span class="tag">LOW / MED / HIGH</span></div>
+          <p class="hint" style="margin:0">用三个模块当前的地址与 Cookie，依次改写 security 跑轻量探测，一屏看出每一档的过滤差异。只做探测，不导出数据、不爆破。</p>
+          <div class="row gap wrap mt">
+            <button class="btn btn-sm btn-primary" id="matrixRun"><svg class="ico"><use href="#i-shield"/></svg>生成难度矩阵</button>
+            <button class="btn btn-sm" id="matrixExport" disabled><svg class="ico"><use href="#i-download"/></svg>导出矩阵</button>
+            <span class="hint">约 20–50 秒，取决于命令注入的 ping 探测</span>
+          </div>
+          <div id="matrixOut" class="table-wrap"></div>
+        </div>
+
+        <div class="panel notice">
+          <div class="notice-ico"><svg class="ico"><use href="#i-shield"/></svg></div>
+          <div>
+            <strong>使用边界</strong>
+            <p>本控制台只面向 <b>DVWA / 自建靶场 / 明确授权</b> 的目标。后端默认只监听本机，并对非内网目标做硬拦截；所有验证载荷均为 <code>alert(1)</code>、<code>echo</code> 等无害标记，不包含持久化后门或凭据外传逻辑。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SQLI ================= -->
+      <section class="page" id="page-sqli">
+        <div class="page-head">
+          <div><h2>SQL 注入工作台</h2><p>从注入点探测到数据导出，全链路可在同一页完成。</p></div>
+          <div class="page-tags"><span>MySQL / MariaDB</span><span>UNION 回显</span><span>可中断</span></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">01</span><h3>目标与参数</h3><span class="tag">TARGET</span></div>
+          <div class="form-grid">
+            <label class="field span2"><span>目标 URL</span><input id="sqliUrl" data-prefix="sqli" data-key="url" spellcheck="false" value="http://127.0.0.1/vulnerabilities/sqli/?id=1&Submit=Submit"></label>
+            <label class="field"><span>请求方法</span><select id="sqliMethod" data-prefix="sqli" data-key="method"><option>GET</option><option>POST</option></select></label>
+            <label class="field"><span>请求延迟 / 秒</span><input id="sqliDelay" data-prefix="sqli" data-key="delay" type="number" step="0.05" min="0" max="5" value="0.15"></label>
+            <label class="field span2"><span>Cookie</span><input id="sqliCookie" data-prefix="sqli" data-key="cookie" spellcheck="false" value="" placeholder="PHPSESSID=...; security=low"></label>
+          </div>
+          <details class="post-box">
+            <summary>POST 表单数据（GET 目标可忽略）</summary>
+            <textarea id="sqliData" data-prefix="sqli" data-key="data" rows="2" placeholder="username=admin&password=1&Login=Login"></textarea>
+          </details>
+          <div class="row between wrap mt">
+            <div class="chips" id="sqliParams"><span class="hint">URL 中的参数会自动解析</span></div>
+            <div class="row gap">
+              <label class="switch"><input type="checkbox" id="sqliPublic" data-prefix="sqli" data-key="public"><span class="track"></span><span class="switch-txt">授权公网目标</span></label>
+              <button class="btn btn-sm" id="sqliForm"><svg class="ico"><use href="#i-search"/></svg>识别表单</button>
+              <button class="btn btn-sm" id="sqliCheck"><svg class="ico"><use href="#i-search"/></svg>连接测试</button>
+              <button class="btn btn-sm" id="sqliSync">同步 Cookie</button>
+            </div>
+          </div>
+          <div id="sqliCheckOut" class="inline-out"></div>
+          <div id="sqliFormBox" class="inline-out"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">02</span><h3>注入探测</h3><span class="tag">DETECT</span></div>
+          <div class="row gap wrap">
+            <button class="btn btn-primary" id="sqliAuto"><svg class="ico"><use href="#i-bolt"/></svg>一键全自动</button>
+            <button class="btn" id="sqliProbe">仅探测注入点</button>
+            <button class="btn" id="sqliColumns">列数探测</button>
+            <button class="btn" id="sqliDisplay">回显列定位</button>
+            <button class="btn" id="sqliFingerprint">数据库指纹</button>
+            <button class="btn" id="sqliDatabases">枚举数据库</button>
+            <button class="btn btn-sm" id="sqliReport"><svg class="ico"><use href="#i-download"/></svg>导出报告</button>
+          </div>
+          <div class="ctx-bar" id="sqliCtx"><span class="hint">尚未建立注入上下文 · 建议先执行「一键全自动」或「仅探测注入点」</span></div>
+          <div id="sqliFindings" class="results"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">03</span><h3>数据浏览器</h3><span class="tag">DUMP</span></div>
+          <div class="explorer">
+            <div class="exp-col"><div class="exp-title">数据库 <span id="sqliDbCount"></span></div><div id="sqliDbList" class="list"><div class="empty sm">先枚举数据库</div></div></div>
+            <div class="exp-col"><div class="exp-title">数据表 <span id="sqliTableCount"></span></div><div id="sqliTableList" class="list"><div class="empty sm">选择左侧数据库</div></div></div>
+            <div class="exp-col"><div class="exp-title">字段 <span id="sqliFieldCount"></span></div><div id="sqliFieldList" class="list"><div class="empty sm">选择数据表</div></div></div>
+          </div>
+          <div class="row between wrap mt">
+            <div class="row gap">
+              <label class="mini">导出行数 <input id="sqliLimit" type="number" value="10" min="1" max="50"></label>
+              <button class="btn btn-sm btn-primary" id="sqliDump" disabled>导出数据</button>
+              <button class="btn btn-sm" id="sqliDumpAll" disabled>导出整库</button>
+            </div>
+            <div class="row gap">
+              <button class="btn btn-sm" id="sqliExportJson" disabled><svg class="ico"><use href="#i-download"/></svg>JSON</button>
+              <button class="btn btn-sm" id="sqliExportCsv" disabled><svg class="ico"><use href="#i-download"/></svg>CSV</button>
+            </div>
+          </div>
+          <div class="row gap mt">
+            <input id="sqliFilter" class="grow" spellcheck="false" placeholder="过滤当前表数据（输入关键字）" disabled>
+          </div>
+          <div id="sqliData" class="table-wrap"><div class="empty">选择 库 → 表 → 字段 后导出数据</div></div>
+          <div class="divider"></div>
+          <div class="row gap">
+            <input id="sqliExpr" class="grow" spellcheck="false" placeholder="自定义表达式：@@version / (SELECT GROUP_CONCAT(user) FROM mysql.user)">
+            <button class="btn btn-sm" id="sqliCustomRun">执行表达式</button>
+          </div>
+          <div id="sqliCustomOut" class="inline-out"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">04</span><h3>盲注提取</h3><span class="tag">BLIND / BISECT</span></div>
+          <p class="hint" style="margin:0">UNION 不回显时使用。基于已建立的注入上下文，按 ASCII 二分逐字符提取；布尔模式快，时间模式慢但更通用。</p>
+          <div class="row gap wrap mt">
+            <div class="seg" id="sqliBlindMode" style="margin:0">
+              <button class="seg-btn active" data-mode="boolean">布尔盲注</button>
+              <button class="seg-btn" data-mode="time">时间盲注</button>
+            </div>
+            <label class="mini" id="sqliBlindDelayWrap" hidden>延迟 / 秒 <input id="sqliBlindDelay" type="number" value="1" step="0.2" min="0.5" max="5"></label>
+            <input id="sqliBlindExpr" class="grow" spellcheck="false" value="VERSION()" placeholder="VERSION() / DATABASE() / (SELECT password FROM users LIMIT 0,1)">
+            <label class="mini">最多字符 <input id="sqliBlindLen" type="number" value="24" min="1" max="80"></label>
+            <button class="btn btn-sm btn-primary" id="sqliBlindRun">开始盲注</button>
+          </div>
+          <div id="sqliBlindOut" class="inline-out"></div>
+
+          <div class="divider"></div>
+          <p class="hint" style="margin:0">盲注拖库：没有回显时也能把库名 → 表名 → 字段 → 数据一层层抠出来。表名留空表示整库枚举（时间模式不建议）。</p>
+          <div class="form-grid mt">
+            <label class="field"><span>数据库名</span><input id="sqliBlindDb" value="dvwa" spellcheck="false" placeholder="dvwa"></label>
+            <label class="field"><span>表名（留空 = 整库）</span><input id="sqliBlindTable" spellcheck="false" placeholder="users"></label>
+            <label class="field"><span>每表行数</span><input id="sqliBlindRows" type="number" value="3" min="1" max="20"></label>
+            <label class="field"><span>字段（逗号分隔，可空）</span><input id="sqliBlindCols" spellcheck="false" placeholder="user,password"></label>
+          </div>
+          <div class="row gap wrap mt">
+            <button class="btn btn-sm btn-primary" id="sqliBlindDumpBtn">盲注拖库</button>
+            <span class="hint">请求量较大：布尔模式建议延迟 0.02s，时间模式会慢很多</span>
+          </div>
+          <div id="sqliBlindDumpOut" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ================= XSS ================= -->
+      <section class="page" id="page-xss">
+        <div class="page-head">
+          <div><h2>XSS 攻击台</h2><p>先识别过滤强度与反射上下文，再挑选真正能执行的载荷。</p></div>
+          <div class="page-tags"><span>反射型</span><span>上下文分析</span><span>POC</span></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">01</span><h3>目标与参数</h3><span class="tag">TARGET</span></div>
+          <div class="form-grid">
+            <label class="field span2"><span>目标 URL</span><input id="xssUrl" data-prefix="xss" data-key="url" spellcheck="false" value="http://127.0.0.1/vulnerabilities/xss_r/"></label>
+            <label class="field" id="xssParamField"><span>测试参数名（多个用逗号分隔）</span><input id="xssParam" data-prefix="xss" data-key="param" spellcheck="false" placeholder="name,search,q" value="name"></label>
+            <label class="field"><span>请求延迟 / 秒</span><input id="xssDelay" data-prefix="xss" data-key="delay" type="number" step="0.05" min="0" value="0.1"></label>
+            <label class="field span2"><span>Cookie</span><input id="xssCookie" data-prefix="xss" data-key="cookie" spellcheck="false" value="" placeholder="PHPSESSID=...; security=low"></label>
+            <div class="form-grid span2" id="xssStoredBox" hidden>
+              <label class="field span2"><span>提交 URL（留言板）</span><input id="xssSubmitUrl" spellcheck="false" value="http://127.0.0.1/vulnerabilities/xss_s/"></label>
+              <label class="field span2"><span>校验 URL（提交后读取的页面）</span><input id="xssVerifyUrl" spellcheck="false" value="http://127.0.0.1/vulnerabilities/xss_s/"></label>
+              <label class="field"><span>姓名字段</span><input id="xssNameField" value="txtName" spellcheck="false"></label>
+              <label class="field"><span>内容字段</span><input id="xssMsgField" value="mtxMessage" spellcheck="false"></label>
+              <label class="field span2"><span>附加字段（k=v&k2=v2）</span><input id="xssExtra" value="btnSign=Sign Guestbook" spellcheck="false"></label>
+              <label class="switch span2"><input type="checkbox" id="xssStoredDeep"><span class="track"></span><span class="switch-txt">深度向量（19 条：SVG / MathML / 事件 / 伪协议，写入留言板条目较多）</span></label>
+            </div>
+          </div>
+          <div class="row between wrap mt">
+            <div class="chips" id="xssParams"><span class="hint">测试 8 种向量 · 含大小写 / 事件 / 伪协议</span></div>
+            <div class="row gap">
+              <label class="switch"><input type="checkbox" id="xssPublic" data-prefix="xss" data-key="public"><span class="track"></span><span class="switch-txt">授权公网目标</span></label>
+              <button class="btn btn-sm" id="xssSync">同步 Cookie</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">02</span><h3>载荷矩阵</h3><span class="tag">DETECT</span></div>
+          <div class="seg" id="xssMode">
+            <button class="seg-btn active" data-mode="reflected">反射型</button>
+            <button class="seg-btn" data-mode="stored">存储型</button>
+          </div>
+          <div class="row gap wrap">
+            <button class="btn btn-primary" id="xssScan"><svg class="ico"><use href="#i-bolt"/></svg>开始检测</button>
+            <button class="btn" id="xssVariants">生成绕过变体</button>
+            <button class="btn" id="xssDom">DOM 静态检测</button>
+            <button class="btn" id="xssHeaders">防御面审计</button>
+            <button class="btn" id="xssDeep">深度向量</button>
+            <button class="btn" id="xssPoc">生成 POC</button>
+            <button class="btn btn-sm" id="xssReport"><svg class="ico"><use href="#i-download"/></svg>导出报告</button>
+          </div>
+          <div id="xssLevel" class="level-box"><div class="level-badge idle">WAITING</div><div><strong>尚未检测</strong><p>检测会依次发送 8 种无害向量，判断是否原样反射、被编码或被拦截。</p></div></div>
+          <div id="xssTable" class="table-wrap"></div>
+          <div id="xssVariantsBox"></div>
+          <div id="xssDomBox"></div>
+          <div id="xssHeadersBox"></div>
+          <div id="xssDeepBox"></div>
+        </div>
+
+        <div class="panel" id="xssPocPanel">
+          <div class="panel-head"><span class="idx">03</span><h3>POC 输出</h3><span class="tag">EXPORT</span></div>
+          <div class="tabs" id="xssPocTabs">
+            <button class="tab active" data-tab="links">触发链路</button>
+            <button class="tab" data-tab="html">HTML 报告</button>
+            <button class="tab" data-tab="markdown">Markdown</button>
+          </div>
+          <div id="xssPocBody" class="poc-body"><div class="empty">检测到可用载荷后可生成 POC</div></div>
+          <div class="row gap mt" id="xssPocActions" hidden>
+            <button class="btn btn-sm" id="xssOpenHtml">新窗口打开 HTML</button>
+            <button class="btn btn-sm" id="xssDownloadHtml"><svg class="ico"><use href="#i-download"/></svg>下载 HTML</button>
+            <button class="btn btn-sm" id="xssDownloadMd"><svg class="ico"><use href="#i-download"/></svg>下载 Markdown</button>
+            <button class="btn btn-sm" id="xssDownloadStored" hidden><svg class="ico"><use href="#i-download"/></svg>下载存储型提交页</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">04</span><h3>盲打接收端</h3><span class="tag">BLIND XSS</span></div>
+          <p class="hint" style="margin:0">生成载荷并提交到留言板 / 反馈表单。页面被管理员或机器人打开时，浏览器会回连本控制台，命中记录出现在下方。<b>执行载荷的浏览器必须能访问 127.0.0.1:8848</b>。</p>
+          <div class="form-grid mt">
+            <label class="field"><span>标记 Token</span><input id="blindToken" spellcheck="false"></label>
+            <label class="field"><span>载荷类型</span><select id="blindType"><option value="script">script 标签</option><option value="img">img onerror</option><option value="svg">svg onload</option></select></label>
+            <label class="field span2"><span>盲打载荷（只回传页面 URL / UA，不采集 Cookie）</span><textarea id="blindPayload" rows="3" readonly spellcheck="false"></textarea></label>
+          </div>
+          <div class="row between wrap mt">
+            <div class="row gap">
+              <button class="btn btn-sm" id="blindCopy">复制载荷</button>
+              <button class="btn btn-sm" id="blindRefresh">刷新命中</button>
+            </div>
+            <div class="row gap">
+              <label class="switch"><input type="checkbox" id="blindAuto" checked><span class="track"></span><span class="switch-txt">自动刷新</span></label>
+              <button class="btn btn-sm btn-danger" id="blindClear">清空</button>
+            </div>
+          </div>
+          <div id="blindHits" class="table-wrap"><div class="empty">暂无命中</div></div>
+        </div>
+      </section>
+
+      <!-- ================= CMDI ================= -->
+      <section class="page" id="page-cmdi">
+        <div class="page-head">
+          <div><h2>命令注入台</h2><p>先用唯一标记确认拼接生效，再进入受控的命令执行面板。</p></div>
+          <div class="page-tags"><span>8 种连接符</span><span>标记回显</span><span>白名单</span></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">01</span><h3>目标与参数</h3><span class="tag">TARGET</span></div>
+          <div class="form-grid">
+            <label class="field span2"><span>目标 URL</span><input id="cmdiUrl" data-prefix="cmdi" data-key="url" spellcheck="false" value="http://127.0.0.1/vulnerabilities/exec/"></label>
+            <label class="field"><span>参数名</span><input id="cmdiParams" data-prefix="cmdi" data-key="params" spellcheck="false" value="ip" placeholder="ip,host,cmd"></label>
+            <label class="field"><span>请求延迟 / 秒</span><input id="cmdiDelay" data-prefix="cmdi" data-key="delay" type="number" step="0.05" min="0" value="0.15"></label>
+            <label class="field span2"><span>Cookie</span><input id="cmdiCookie" data-prefix="cmdi" data-key="cookie" spellcheck="false" value="" placeholder="PHPSESSID=...; security=low"></label>
+          </div>
+          <div class="row between wrap mt">
+            <div class="chips" id="cmdiChips"><span class="hint">自动识别 GET / POST 表单、提交按钮与隐藏 token</span></div>
+            <div class="row gap">
+              <label class="switch"><input type="checkbox" id="cmdiPublic" data-prefix="cmdi" data-key="public"><span class="track"></span><span class="switch-txt">授权公网目标</span></label>
+              <button class="btn btn-sm" id="cmdiSync">同步 Cookie</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">02</span><h3>注入探测</h3><span class="tag">DETECT</span></div>
+          <div class="row gap wrap">
+            <button class="btn btn-primary" id="cmdiProbe"><svg class="ico"><use href="#i-bolt"/></svg>扫描命令注入</button>
+            <button class="btn" id="cmdiBlind">盲命令探测</button>
+            <button class="btn btn-sm" id="cmdiReport"><svg class="ico"><use href="#i-download"/></svg>导出报告</button>
+          </div>
+          <div id="cmdiFindings" class="results"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">03</span><h3>命令执行</h3><span class="tag">CONSOLE</span></div>
+          <div class="exec-grid">
+            <label class="field"><span>连接方式</span><select id="cmdiTemplate"><option value="127.0.0.1; {CMD}">分号 ;</option><option value="127.0.0.1 && {CMD}">AND &amp;&amp;</option><option value="127.0.0.1 | {CMD}">管道 |</option><option value="127.0.0.1 || {CMD}">OR ||</option><option value="127.0.0.1`{CMD}`">反引号</option><option value="127.0.0.1$({CMD})">$()</option><option value="127.0.0.1 &amp; {CMD}">Windows &amp;</option></select></label>
+            <label class="field grow"><span>命令</span><input id="cmdiCommand" spellcheck="false" placeholder="whoami"></label>
+            <button class="btn btn-primary" id="cmdiRun"><svg class="ico"><use href="#i-play"/></svg>执行</button>
+          </div>
+          <div class="row between wrap mt">
+            <div class="cmd-quick">
+              <div class="quick-cmds">
+                <span class="qlabel">LINUX</span>
+                <button class="qcmd">whoami</button><button class="qcmd">id</button><button class="qcmd">pwd</button>
+                <button class="qcmd">uname -a</button><button class="qcmd">ls -la</button><button class="qcmd">cat /etc/passwd</button>
+              </div>
+              <div class="quick-cmds">
+                <span class="qlabel">WIN</span>
+                <button class="qcmd">whoami</button><button class="qcmd">whoami /priv</button><button class="qcmd">ipconfig</button>
+                <button class="qcmd">systeminfo</button><button class="qcmd">net user</button><button class="qcmd">tasklist</button>
+              </div>
+            </div>
+            <div class="row gap">
+              <button class="btn btn-sm" id="cmdiCopy">复制输出</button>
+              <label class="switch warn"><input type="checkbox" id="cmdiAllowAll"><span class="track"></span><span class="switch-txt">解除只读白名单</span></label>
+            </div>
+          </div>
+          <div class="term-out" id="cmdiOutput"><span class="term-dim">等待执行…</span></div>
+          <div class="hint">安全模式仅允许 whoami / id / ls / cat /etc/passwd 等只读侦察命令，且禁止连接符。</div>
+        </div>
+      </section>
+
+      <!-- ================= BRUTE ================= -->
+      <section class="page" id="page-brute">
+        <div class="page-head">
+          <div><h2>弱口令爆破台</h2><p>面向登录表单的字典测试，实时显示速率、进度与命中凭证。</p></div>
+          <div class="page-tags"><span>智能模式</span><span>双字典</span><span>实时进度</span></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">01</span><h3>登录表单</h3><span class="tag">TARGET</span></div>
+          <div class="form-grid">
+            <label class="field span2"><span>登录 URL</span><input id="bruteUrl" data-prefix="brute" data-key="url" spellcheck="false" value="http://127.0.0.1/vulnerabilities/brute/"></label>
+            <label class="field"><span>用户名参数</span><input id="bruteUserField" data-prefix="brute" data-key="userField" value="username"></label>
+            <label class="field"><span>密码参数</span><input id="brutePassField" data-prefix="brute" data-key="passField" value="password"></label>
+            <label class="field"><span>提交按钮参数（可选）</span><input id="bruteSubmitField" data-prefix="brute" data-key="submitField" value="Login"></label>
+            <label class="field"><span>请求延迟 / 秒</span><input id="bruteDelay" data-prefix="brute" data-key="delay" type="number" step="0.05" min="0" value="0.2"></label>
+            <label class="field span2"><span>Cookie</span><input id="bruteCookie" data-prefix="brute" data-key="cookie" spellcheck="false" value="" placeholder="PHPSESSID=...; security=low"></label>
+          </div>
+          <div class="row between wrap mt">
+            <div class="chips"><span class="chip">GET / POST 自动</span><span class="chip">表单字段可改</span></div>
+            <div class="row gap">
+              <label class="switch"><input type="checkbox" id="brutePublic" data-prefix="brute" data-key="public"><span class="track"></span><span class="switch-txt">授权公网目标</span></label>
+              <button class="btn btn-sm" id="bruteSync">同步 Cookie</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">02</span><h3>字典与策略</h3><span class="tag">WORDLIST</span></div>
+          <div class="grid-2 tight">
+            <label class="field"><span>用户名字典（换行 / 空格 / 逗号分隔）</span><textarea id="bruteUsers" rows="6" spellcheck="false"></textarea>
+              <span class="row gap"><label class="file-btn">导入文件<input type="file" id="bruteUsersFile" accept=".txt,.lst,.csv" hidden></label><span class="hint">每行一个</span></span>
+            </label>
+            <label class="field"><span>密码字典</span><textarea id="brutePasswords" rows="6" spellcheck="false"></textarea>
+              <span class="row gap"><label class="file-btn">导入文件<input type="file" id="brutePasswordsFile" accept=".txt,.lst,.csv" hidden></label><span class="hint">每行一个</span></span>
+            </label>
+          </div>
+          <div class="form-grid mt">
+            <label class="field"><span>策略</span><select id="bruteMode"><option value="smart">智能：每个用户命中即停</option><option value="standard">标准：跑完所有组合</option><option value="spray">密码喷洒：同一密码轮询所有用户</option></select></label>
+            <label class="field"><span>尝试上限</span><input id="bruteMax" type="number" value="500" min="1" max="5000"></label>
+            <label class="field"><span>成功特征（逗号分隔）</span><input id="bruteSuccess" value="Welcome to the password protected area" spellcheck="false"></label>
+            <label class="field"><span>失败特征（逗号分隔）</span><input id="bruteFailure" value="Username and/or password incorrect" spellcheck="false"></label>
+            <label class="field span2"><span>成功正则（可选，匹配即判定成功）</span><input id="bruteRegex" placeholder="(?i)welcome|dashboard|logout" spellcheck="false"></label>
+          </div>
+          <div class="row between wrap mt">
+            <div class="row gap">
+              <button class="btn btn-primary" id="bruteRun"><svg class="ico"><use href="#i-play"/></svg>开始爆破</button>
+              <button class="btn btn-sm" id="bruteStop" disabled>中止</button>
+              <button class="btn btn-sm" id="bruteReport"><svg class="ico"><use href="#i-download"/></svg>导出报告</button>
+              <label class="switch"><input type="checkbox" id="bruteBackoff" checked><span class="track"></span><span class="switch-txt">限速自动退避</span></label>
+            </div>
+            <div class="progress-wrap"><div class="progress"><i id="bruteBar"></i></div><span id="bruteProgress">0 / 0</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">03</span><h3>命中结果</h3><span class="tag">RESULT</span></div>
+          <div class="row gap"><button class="btn btn-sm" id="bruteExport" disabled><svg class="ico"><use href="#i-download"/></svg>导出 CSV</button></div>
+          <div id="bruteResult" class="table-wrap"><div class="empty">尚未开始</div></div>
+        </div>
+      </section>
+
+      <!-- ================= TASKS ================= -->
+      <section class="page" id="page-batch">
+        <div class="page-head">
+          <div><h2>批量扫描</h2><p>一份目标清单，按顺序跑同一个模块的最小验证，适合一次测多台靶机或多个注入点地址。</p></div>
+          <div class="page-tags"><span>最多 20 个</span><span>顺序执行</span><span>可中止</span></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">01</span><h3>目标清单</h3><span class="tag">TARGETS</span></div>
+          <div class="form-grid">
+            <label class="field"><span>扫描模块</span><select id="batchModule"><option value="sqli">SQL 注入</option><option value="xss">XSS</option><option value="cmdi">命令注入</option></select></label>
+            <label class="field"><span>参数名（多个取第一个）</span><input id="batchParams" spellcheck="false" value="id"></label>
+            <label class="field"><span>请求延迟 / 秒</span><input id="batchDelay" type="number" value="0.05" step="0.05" min="0" max="3"></label>
+            <label class="field"><span>Cookie（四个模块通用）</span><input id="batchCookie" spellcheck="false" value="" placeholder="PHPSESSID=...; security=low"></label>
+          </div>
+          <label class="field mt"><span>目标 URL（每行一个，最多 20 个）</span><textarea id="batchUrls" rows="7" spellcheck="false" placeholder="http://127.0.0.1/vulnerabilities/sqli/?id=1&Submit=Submit"></textarea></label>
+          <div class="row gap wrap mt">
+            <button class="btn btn-primary btn-sm" id="batchRun"><svg class="ico"><use href="#i-play"/></svg>开始批量扫描</button>
+            <button class="btn btn-sm" id="batchFromModule">从模块页复制配置</button>
+            <span class="hint">只做探测级动作，不导出数据、不爆破；公网目标仍会被护栏拦截</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">02</span><h3>扫描结果</h3><span class="tag">RESULT</span></div>
+          <div class="row gap wrap">
+            <button class="btn btn-sm" id="batchExport" disabled><svg class="ico"><use href="#i-download"/></svg>导出 Markdown</button>
+            <span class="hint">点结果行的「载入」可把该目标带进对应模块继续深挖</span>
+          </div>
+          <div id="batchOut" class="table-wrap"><div class="empty">尚未开始</div></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-tasks">
+        <div class="page-head">
+          <div><h2>任务中心</h2><p>运行中与最近的任务队列，可查看进度、拉取日志或中止。</p></div>
+          <div class="page-tags"><span id="taskCount">0 个任务</span></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span class="idx">01</span><h3>任务队列</h3><span class="tag">QUEUE</span></div>
+          <div class="row between wrap">
+            <button class="btn btn-sm" id="taskRefresh">刷新</button>
+            <span class="hint">运行中的任务每 3 秒自动刷新</span>
+          </div>
+          <div id="taskTable" class="table-wrap"><div class="empty">暂无任务</div></div>
+        </div>
+      </section>
+
+      <!-- ================= HISTORY ================= -->
+      <section class="page" id="page-history">
+        <div class="page-head">
+          <div><h2>任务记录</h2><p>每一次探测的结论、目标与耗时都会归档，可导出 Markdown 报告。</p></div>
+          <div class="page-tags"><span id="historyCount">0 条</span></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span class="idx">01</span><h3>归档列表</h3><span class="tag">ARCHIVE</span></div>
+          <div class="row gap wrap">
+            <button class="btn btn-sm" id="historyRefresh">刷新</button>
+            <button class="btn btn-sm" id="historyExport"><svg class="ico"><use href="#i-download"/></svg>导出 Markdown</button>
+            <button class="btn btn-sm" id="historyReport"><svg class="ico"><use href="#i-download"/></svg>导出总报告 HTML</button>
+            <button class="btn btn-sm btn-danger" id="historyClear"><svg class="ico"><use href="#i-trash"/></svg>清空记录</button>
+          </div>
+          <div id="historyTable" class="table-wrap"><div class="empty">暂无记录</div></div>
+        </div>
+      </section>
+
+      <!-- ================= ABOUT ================= -->
+      <section class="page" id="page-about">
+        <div class="page-head">
+          <div><h2>边界与说明</h2><p>这套控制台是怎么搭的，以及它刻意不做哪些事。</p></div>
+          <div class="page-tags"><span>v12.0</span><span>LOCAL ONLY</span></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><span class="idx">01</span><h3>安全护栏</h3><span class="tag">GUARD</span></div>
+            <ul class="rule-list">
+              <li><b>监听地址</b><span>仅 127.0.0.1:8848，不对外网暴露 Web 界面。</span></li>
+              <li><b>目标白名单</b><span>默认只允许 loopback / 内网 IP / .local 等靶场域名，公网目标需显式二次确认。</span></li>
+              <li><b>无害载荷</b><span>XSS 只用 alert(1)；命令注入只用 echo 标记与只读侦察命令；SQL 只读查询，不做写操作。</span></li>
+              <li><b>命令白名单</b><span>默认禁止连接符与非只读命令，解除前会显示风险提示。</span></li>
+              <li><b>速率限制</b><span>所有模块带请求间隔，避免把靶场打挂。</span></li>
+            </ul>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><span class="idx">02</span><h3>技术架构</h3><span class="tag">STACK</span></div>
+            <ul class="rule-list">
+              <li><b>后端</b><span>Python 3 + Flask，多线程任务队列，日志增量推送。</span></li>
+              <li><b>前端</b><span>原生 HTML / CSS / JS，无构建步骤，离线可用。</span></li>
+              <li><b>SQL 引擎</b><span>ORDER BY 列数探测 → UNION 回显定位 → 标记包裹提取 → GROUP_CONCAT 批量枚举；回显不可用时切换到 ASCII 二分盲注。</span></li>
+              <li><b>XSS 引擎</b><span>8 向量矩阵 + 反射分类 + 上下文定位；存储型支持自动提交、回读校验与 POC 提交页。</span></li>
+              <li><b>任务</b><span>每个动作独立任务，可中止、可追溯、结论自动归档。</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="idx">03</span><h3>从脚本到平台</h3><span class="tag">UPGRADE</span></div>
+          <div class="upgrade-grid">
+            <div><b>01 交互方式</b><p>原来每个脚本都需要命令行 input() 交互，现在统一为 Web 表单 + 一键流水线。</p></div>
+            <div><b>02 数据提取</b><p>原脚本靠 "First name:" 正则猜结果，现改为 <code>~z~value~z~</code> 唯一标记精确回显。</p></div>
+            <div><b>03 枚举效率</b><p>库名 / 表名 / 字段名改用 GROUP_CONCAT 一次取回，请求数从 O(n) 降到 1。</p></div>
+            <div><b>04 可观测性</b><p>实时日志、进度、请求计数与中止能力，替代散落在终端里的 print。</p></div>
+            <div><b>05 结论沉淀</b><p>任务结束后自动归档，支持导出 Markdown 报告，便于写实验报告。</p></div>
+            <div><b>06 安全边界</b><p>新增目标护栏、命令白名单、速率限制，避免工具被误用到非授权目标。</p></div>
+            <div><b>07 盲注提取</b><p>UNION 不回显时，按 ASCII 二分逐字符提取，覆盖布尔盲注场景。</p></div>
+            <div><b>08 存储型 XSS</b><p>自动提交留言并回读校验，输出持久化强度与可执行载荷。</p></div>
+            <div><b>09 报告与代理</b><p>各模块一键导出 Markdown 报告；支持 HTTP 代理接入 Burp 观察流量。</p></div>
+            <div><b>10 全库导出</b><p>一次遍历数据库内所有表，按行导出并生成 JSON / CSV。</p></div>
+            <div><b>11 多参数与 DOM</b><p>XSS 支持逗号分隔多参数批量检测，并可静态分析 source → sink 数据流。</p></div>
+            <div><b>12 喷洒与正则</b><p>弱口令支持密码喷洒、正则判定、字典文件导入与 429 自动停止。</p></div>
+            <div><b>13 防御面审计</b><p>检查 CSP、X-Frame-Options、安全 Cookie 等响应头，给出 A–D 评分与整改建议。</p></div>
+            <div><b>14 盲命令探测</b><p>无回显时用 ping / sleep 的响应延迟确认命令执行，覆盖盲注场景。</p></div>
+            <div><b>15 历史详情</b><p>任务结果完整归档，点击记录即可回看证据并下载 JSON。</p></div>
+            <div><b>16 表单识别</b><p>自动解析页面表单的 method / action / 字段，POST 靶场一键套用。</p></div>
+            <div><b>17 盲打接收端</b><p>生成盲打载荷并收集回连命中，记录触发页面与 UA。</p></div>
+            <div><b>18 任务中心</b><p>独立任务队列页面，实时进度、日志回放与中止。</p></div>
+            <div><b>19 难度切换</b><p>顶栏 SEC 一键切换 LOW / MEDIUM / HIGH，自动改写四个模块的 Cookie。</p></div>
+            <div><b>20 High SQLi</b><p>自动识别 session-input.php，先写入会话 ID 再读取结果；UNION 标记扫列兜底。</p></div>
+            <div><b>21 High 爆破与命令</b><p>自动刷新轮换 token；命令注入用 <code>||</code> 与 whoami 回显确认。</p></div>
+            <div><b>22 深度向量库</b><p>18 条 SVG / MathML / autofocus / srcdoc / 伪协议向量，覆盖 high 的解析器差异。</p></div>
+            <div><b>23 失败自动降级</b><p>UNION 无法回显时自动切布尔盲注，再失败切时间盲注。</p></div>
+            <div><b>24 Cookie 会话</b><p>改用 CookieJar，服务端 Set-Cookie 可回传，支持 high 的 cookie-input 盲注。</p></div>
+            <div><b>25 盲注拖库</b><p>无回显时按 HEX 逐字节提取，库名 → 表名 → 字段 → 数据全链路可拖。</p></div>
+            <div><b>26 存储型深度</b><p>存储型 XSS 可套用 19 条深度向量，一次写入、回读、判定编码与否。</p></div>
+            <div><b>27 全模块回归</b><p>一键复测四个模块，附带代理端口连通性检查，切换难度或开 Burp 后先跑一次。</p></div>
+            <div><b>28 自动登录</b><p>填靶场账号密码，自动带 CSRF token 登录并抓取新的 PHPSESSID，一键写入四个模块。</p></div>
+            <div><b>29 难度矩阵</b><p>不改配置，直接用同一套目标跑 LOW / MEDIUM / HIGH，一屏对比三档的过滤差异。</p></div>
+            <div><b>30 总报告</b><p>把全部任务归档渲染成可离线打开、可直接打印的 HTML 报告。</p></div>
+            <div><b>31 Cookie 巡检</b><p>进页面查一次、之后每 5 分钟一次；失效时顶栏弹提示，可一键用上次账号重登。</p></div>
+            <div><b>32 矩阵导出</b><p>难度矩阵可导出 Markdown，含总览表格与每档细节，直接贴进实验报告。</p></div>
+            <div><b>33 批量扫描</b><p>粘一份 URL 清单，按顺序跑同一模块的最小验证，结果可载入到模块页继续深挖。</p></div>
+            <div><b>34 一键全流程</b><p>四个模块一次跑完并出汇总报告，SQLi 会一路做到库列表，弱口令可选附加。</p></div>
+            <div><b>35 配置档</b><p>保存四模块地址 / Cookie / 参数 / 难度，换靶场一键还原，可导出 JSON 备份。</p></div>
+            <div><b>36 授权留痕</b><p>勾选「授权公网目标」需二次确认，确认记录会写进导出的报告。</p></div>
+          </div>
+        </div>
+
+        <div class="panel notice">
+          <div class="notice-ico"><svg class="ico"><use href="#i-info"/></svg></div>
+          <div>
+            <strong>法律提示</strong>
+            <p>《网络安全法》《刑法》285/286 条对未经授权的侵入、破坏行为有明确处罚。请仅在自有靶场、CTF 赛事或书面授权范围内使用，并对测试数据做好隔离。</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div class="console" id="console">
+  <div class="console-head">
+    <div class="row gap">
+      <span class="dot live"></span>
+      <strong>LIVE CONSOLE</strong>
+      <span class="cstat" id="consoleState">IDLE</span>
+      <span class="cstat dim" id="consoleStep"></span>
+    </div>
+    <div class="row gap">
+      <span class="cstat" id="reqCount">0 REQ</span>
+      <button class="cbtn" id="consoleStop" disabled>STOP</button>
+      <button class="cbtn" id="consoleClear">CLEAR</button>
+      <button class="cbtn" id="consoleMin">MIN</button>
+    </div>
+  </div>
+  <div class="console-body" id="consoleBody">
+    <div class="cline sys"><span class="ts">--:--:--</span><span class="lv">SYS</span><span class="msg">控制台就绪。选择左侧模块开始，或先做一次靶场连通性检测。</span></div>
+  </div>
+</div>
+
+<div class="modal" id="detailModal" hidden>
+  <div class="modal-card" style="width:min(760px,100%)">
+    <div class="modal-head">
+      <div>
+        <span class="eyebrow" style="margin:0 0 4px">ARCHIVE DETAIL</span>
+        <h3 id="detailTitle">任务详情</h3>
+      </div>
+      <button class="cbtn" id="closeDetail">CLOSE</button>
+    </div>
+    <div class="chips" id="detailMeta"></div>
+    <pre id="detailBody" style="max-height:420px;overflow:auto;margin-top:12px"></pre>
+    <div class="row gap mt">
+      <button class="btn btn-sm" id="detailDownload"><svg class="ico"><use href="#i-download"/></svg>下载 JSON</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="settingsModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <div>
+        <span class="eyebrow" style="margin:0 0 4px">HTTP / ADVANCED</span>
+        <h3>请求设置</h3>
+      </div>
+      <button class="cbtn" id="closeSettings">CLOSE</button>
+    </div>
+    <label class="field"><span>HTTP 代理</span><input id="setProxy" spellcheck="false" placeholder="http://127.0.0.1:8080"></label>
+    <label class="field mt"><span>User-Agent</span><input id="setUA" spellcheck="false" placeholder="留空使用默认浏览器 UA"></label>
+    <p class="hint" style="margin:12px 0 0">保存后立即对全部模块生效，方便把流量转发到 Burp Suite / mitmproxy 观察。代理只影响请求，不会改动 Cookie。</p>
+    <div class="row gap mt">
+      <button class="btn btn-primary btn-sm" id="saveSettings">保存</button>
+      <button class="btn btn-sm" id="resetSettings">清空</button>
+    </div>
+
+    <div class="divider"></div>
+    <div class="panel-head" style="margin:0 0 10px"><span class="idx">02</span><h3 style="font-size:14px">靶场自动登录</h3><span class="tag">AUTO LOGIN</span></div>
+    <div class="form-grid">
+      <label class="field span2"><span>登录页地址</span><input id="loginUrl" spellcheck="false" value="http://127.0.0.1/login.php"></label>
+      <label class="field"><span>用户名</span><input id="loginUser" spellcheck="false" value="admin"></label>
+      <label class="field"><span>密码</span><input id="loginPass" type="password" value="password"></label>
+    </div>
+    <div class="row gap wrap mt">
+      <button class="btn btn-primary btn-sm" id="doLogin"><svg class="ico"><use href="#i-key"/></svg>登录并同步 Cookie</button>
+      <span class="hint">成功后写入四个模块，并按顶栏 SEC 设置难度</span>
+    </div>
+    <div id="loginOut" class="inline-out"></div>
+
+    <div class="divider"></div>
+    <div class="panel-head" style="margin:0 0 10px"><span class="idx">03</span><h3 style="font-size:14px">目标配置档</h3><span class="tag">PROFILES</span></div>
+    <div class="row gap wrap">
+      <select id="profileList" class="grow"><option value="">（暂无保存的配置）</option></select>
+      <button class="btn btn-sm" id="profileApply">应用</button>
+      <button class="btn btn-sm" id="profileDelete">删除</button>
+    </div>
+    <div class="row gap wrap mt">
+      <input id="profileName" class="grow" placeholder="给当前配置起名，例如 DVWA-LOW / 客户A">
+    </div>
+    <div class="row gap wrap mt">
+      <button class="btn btn-sm btn-primary" id="profileSave">保存当前</button>
+      <button class="btn btn-sm" id="profileExport">导出 JSON</button>
+      <button class="btn btn-sm" id="profileImport">导入 JSON</button>
+      <input type="file" id="profileFile" accept=".json,application/json" hidden>
+    </div>
+    <p class="hint" style="margin:10px 0 0">保存四个模块的地址 / Cookie / 参数 / 延迟与难度，换靶场时一键还原；导出的 JSON 可备份或换浏览器导入。</p>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<script src="/assets/app.js"></script>
+</body>
+</html>
